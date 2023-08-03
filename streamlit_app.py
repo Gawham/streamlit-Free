@@ -1,21 +1,68 @@
-import os, streamlit as st
-from tradier_python import TradierAPI
+# Import necessary libraries from dotenv
+from dotenv import load_dotenv
+load_dotenv()
+
+# Import required libraries
+import streamlit as st
+from PyPDF2 import PdfReader
+from PIL import Image
+
+# Import components from langchain
+from langchain.text_splitter import CharacterTextSplitter
+from langchain.embeddings.openai import OpenAIEmbeddings
+from langchain.vectorstores import FAISS
+from langchain.chains.question_answering import load_qa_chain
+from langchain.llms import OpenAI
+from langchain.callbacks import get_openai_callback
 
 # Authenticate with the Tradier API
 access_token = os.environ["TRADIER_TOKEN"]
-tradier = TradierAPI(access_token, "sandbox")
 
 # Define a function to get stock quotes
-def get_stock_quote(symbol):
-    quotes = tradier.get_quotes(symbol)
-    for quote in quotes:
-        if quote.symbol == symbol:
-            return quote.last
-    return None
+def main():
+    st.set_page_config(page_title="Ask your PDF")
+    image = Image.open('Logo.png')
+    st.image(image, width=300)
 
-# Set up the Streamlit app
-st.title("Stocks App")
-symbol = st.text_input("Enter a stock symbol", "AAPL")
-if st.button("Get Quote"):
-    quote = get_stock_quote(symbol)
-    st.success(f"The last price for {symbol} is {quote}")
+    # upload file
+    pdf = st.file_uploader("Upload your PDF", type="pdf")
+
+    # extract the text
+    if pdf is not None:
+        pdf_reader = PdfReader(pdf)
+        text = ""
+        for page in pdf_reader.pages:
+            text += page.extract_text()
+
+        # split into chunks
+        text_splitter = CharacterTextSplitter(
+            separator="\n",
+            chunk_size=1000,
+            chunk_overlap=200,
+            length_function=len
+        )
+        chunks = text_splitter.split_text(text)
+
+        # create embeddings
+        embeddings = OpenAIEmbeddings()
+        knowledge_base = FAISS.from_texts(chunks, embeddings)
+
+        # show user input
+        user_question = st.text_input("Ask a question about your PDF:")
+
+        if any(keyword in user_question.lower() for keyword in ["calculate", "ratio", "stock"]):
+            st.write("This is a premium function. Please upgrade to access this feature.")
+        elif user_question:
+            docs = knowledge_base.similarity_search(user_question)
+
+            llm = OpenAI()
+            chain = load_qa_chain(llm, chain_type="stuff")
+            with get_openai_callback() as cb:
+                response = chain.run(input_documents=docs, question=user_question)
+                print(cb)
+
+            st.write(response)
+
+
+if __name__ == '__main__':
+    main()
