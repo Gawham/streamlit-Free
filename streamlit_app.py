@@ -24,6 +24,7 @@ def main():
     pdf = st.file_uploader("Upload your PDF", type="pdf")
 
     # extract the text
+
     if pdf is not None:
         pdf_reader = PdfReader(pdf)
         text = ""
