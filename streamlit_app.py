@@ -12,7 +12,7 @@ from langchain.llms import OpenAI
 from langchain.callbacks import get_openai_callback
 
 # Authenticate with the Tradier API
-access_token = os.environ["TRADIER_TOKEN"]
+access_token = os.environ["OPENAI_API_KEY"]
 
 # Define a function to get stock quotes
 def main():
