@@ -1,5 +1,5 @@
 # Import required libraries
-import streamlit as st
+import os, streamlit as st
 from PyPDF2 import PdfReader
 from PIL import Image
 
