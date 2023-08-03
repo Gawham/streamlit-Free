@@ -1,7 +1,3 @@
-# Import necessary libraries from dotenv
-from dotenv import load_dotenv
-load_dotenv()
-
 # Import required libraries
 import streamlit as st
 from PyPDF2 import PdfReader
